@@ -4,44 +4,9 @@ import { inspect } from 'node:util'
 
 import { Parser } from '@astronautlabs/m3u8'
 import Hapi from '@hapi/hapi'
-import ffmpeg from 'fluent-ffmpeg'
 import { getPortPromise } from 'portfinder'
 
-import { readEPG, readFFProbeResults } from './utils.js'
-
-const spawnFFMPEG = (file: string) => {
-  return ffmpeg()
-    .input(file)
-    .addInputOption(
-      '-user_agent', 'FMLE/3.0 (compatible; FMSc/1.0)',
-      // '-noaccurate_seek',
-      // '-ignore_unknown',
-      // '-probesize', '20000000',
-      '-re',
-      '-rtbufsize', '128M',
-      '-thread_queue_size', '4096'
-    )
-    .addOutputOption(
-      // '-threads', '4',
-      // '-scan_all_pmts', '1',
-      // '-max_packet_size', '409600',
-      // '-break_non_keyframes', '1',
-      // '-fflags', '+discardcorrupt',
-      // '-scan_all_pmts', '-1',
-      // '-map', '0',
-      '-tune', 'zerolatency',
-      '-preset', 'superfast'
-    )
-    // .map('p:0')
-    .videoCodec('copy')
-    // .audioCodec('copy')
-    // .videoCodec('libx264')
-    .audioCodec('libmp3lame')
-    // .audioCodec('aac')
-    // .outputFormat('mpjpeg')
-    // .outputFormat('mp4')
-    .outputFormat('mpegts')
-}
+import { readConfig, readEPG, readFFProbeResults, spawnFFMPEG } from './utils.js'
 
 /**
  * Start the HAPI Server
@@ -61,15 +26,17 @@ const spawnFFMPEG = (file: string) => {
  * @returns {Promise<void>} - a promise which resolves when the server is started
  */
 const startServer = async () => {
+  const { server: serverConfig } = await readConfig()
+
   const config = {
-    port: await getPortPromise({ port: 26457 }),
+    port: await getPortPromise({ port: serverConfig?.port || 26457 }),
     friendlyName: 'Plex IPTV Proxy',
     manufacturer: 'Silicondust',
     modelName: 'Plex-IPTV',
     modelNumber: 'Plex-IPTV',
     firmwareVersion: '1.0',
     firmwareName: 'plex-iptv-1.0',
-    tunerCount: 4,
+    tunerCount: serverConfig?.tunerCount || 4,
     lineupUrl: '/lineup.json',
     deviceId: '45654789541',
     serialNumber: '0123456789',
@@ -93,6 +60,23 @@ const startServer = async () => {
   server.route({
     method: 'GET',
     path: '/device.xml',
+    /**
+     * Generates a UPnP XML device description for this server.
+     *
+     * The response is a XML document with the following elements:
+     * - URLBase: the base url of this server
+     * - specVersion: the UPnP spec version
+     *   - major: the major version of the spec
+     *   - minor: the minor version of the spec
+     * - device: the device description
+     *   - deviceType: the device type
+     *   - friendlyName: the friendly name of this server
+     *   - manufacturer: the manufacturer of this server
+     *   - modelName: the model name of this server
+     *   - modelNumber: the model number of this server
+     *   - serialNumber: the serial number of this server
+     *   - UDN: the UDN of this server
+     */
     handler: (request) => {
       const res = request.generateResponse(`
       <root xmlns="urn:schemas-upnp-org:device-1-0">
@@ -120,6 +104,21 @@ const startServer = async () => {
   server.route({
     method: 'GET',
     path: '/discover.json',
+    /**
+     * Returns a JSON response with the configuration of this server.
+     *
+     * The response is a JSON object with the following keys:
+     * - FriendlyName: the friendly name of this server
+     * - Manufacturer: the manufacturer of this server
+     * - ModelNumber: the model number of this server
+     * - FirmwareName: the firmware name of this server
+     * - TunerCount: the number of tuners of this server
+     * - FirmwareVersion: the firmware version of this server
+     * - DeviceID: the device ID of this server
+     * - DeviceAuth: the device auth of this server
+     * - BaseURL: the base URL of this server
+     * - LineupURL: the URL of the lineup of this server
+     */
     handler: (request) => {
       const baseUrl = request.url.protocol + '//' + request.url.host
       const res = request.generateResponse(
@@ -146,6 +145,17 @@ const startServer = async () => {
   server.route({
     method: 'GET',
     path: config.lineupUrl,
+    /**
+     * Handles a request to retrieve the lineup in JSON format.
+     *
+     * This handler reads stored ffprobe results, filters out invalid results,
+     * and generates a JSON response with channel information. Each valid channel
+     * includes its name, HD status, channel number, and a URL for streaming.
+     * The response is sent with a 'Content-Type' of 'application/json'.
+     *
+     * @param {Hapi.Request} request - The Hapi request object.
+     * @returns {Hapi.ResponseObject} The response object containing the lineup in JSON format.
+     */
     handler: async (request) => {
       const baseUrl = request.url.protocol + '//' + request.url.host
       const ffprobeStoredResults = await readFFProbeResults()
@@ -169,6 +179,15 @@ const startServer = async () => {
   server.route({
     method: 'GET',
     path: '/epg.xml',
+    /**
+     * Handles a request to retrieve an EPG in XMLTV format.
+     *
+     * This handler reads the previously written EPG from disk and sends it as the response.
+     * The response is sent with a 'Content-Type' of 'application/xml'.
+     *
+     * @param {Hapi.Request} request - The Hapi request object.
+     * @returns {Hapi.ResponseObject} The response object containing the EPG in XMLTV format.
+     */
     handler: async (request) => {
       const ffprobeEpg = await readEPG()
       const res = request.generateResponse(ffprobeEpg)
@@ -190,6 +209,16 @@ const startServer = async () => {
   server.route({
     method: 'GET',
     path: '/lineup_status.json',
+    /**
+     * Handles a request to retrieve lineup status in JSON format.
+     *
+     * This handler generates a JSON response indicating the scan status of the lineup,
+     * whether a scan is possible, the source of the lineup, and a list of available sources.
+     * The response is sent with a 'Content-Type' of 'application/json'.
+     *
+     * @param {Hapi.Request} request - The Hapi request object.
+     * @returns {Hapi.ResponseObject} The response object containing lineup status information.
+     */
     handler: (request) => {
       const res = request.generateResponse(
         JSON.stringify({
@@ -211,13 +240,45 @@ const startServer = async () => {
       cache: false,
       timeout: { server: false, socket: false }
     },
-    handler: (request) => {
+
+    /**
+     * Handles streaming requests by decoding the provided URL and determining
+     * whether audio transcoding is necessary based on the server configuration
+     * and ffProbe results. If transcoding is required, it spawns an FFMPEG
+     * process with the appropriate audio codec, otherwise it copies the audio
+     * stream. The FFMPEG process is piped to create a stream which is then
+     * returned. Handles errors by logging them and terminating the FFMPEG
+     * process.
+     *
+     * @param {Hapi.Request} request - The incoming request object, expected to
+     *   contain a query parameter 'url' which is the media URL to stream.
+     * @returns {stream.Readable} - A readable stream piped from the FFMPEG process.
+     */
+    handler: async (request) => {
       if (typeof request.query.url !== 'string') return 'an url is needed'
       const url = decodeURI(request.query.url)
 
       console.log('streaming', url)
 
-      const ffmpeg = spawnFFMPEG(url)
+      // determine if we need to transcode audio, given some players can't decode some audio codecs
+      // for example aac with profile HE-AAC is not well supported, but the list is configurable
+
+      const { server: serverConfig } = await readConfig()
+      let needsAudioTranscode = false
+      const transcodeAudioConfig = serverConfig?.transcodeAudio
+      if (transcodeAudioConfig) {
+        const ffprobeStoredResults = await readFFProbeResults()
+        const matchedResult = ffprobeStoredResults.results.find(res => res.params.track.url === url)
+        if (matchedResult?.ok) {
+          const audioStreams = matchedResult.metadata.streams.filter(stream => stream.codec_type === 'audio' && stream.codec_name && stream.profile)
+          needsAudioTranscode = !!audioStreams.find(stream => !!transcodeAudioConfig.find(config => config.codec === stream.codec_name && config.profile === stream.profile))
+        } else {
+          console.warn('No matching entry found in stored ffProbe, audio will NOT be transcoded')
+        }
+      }
+      console.log('Will transcode audio?', needsAudioTranscode)
+
+      const ffmpeg = spawnFFMPEG(url, needsAudioTranscode ? 'aac' : 'copy')
       console.log('ffmpeg arguments', ffmpeg._getArguments().join(' '))
       ffmpeg.on('stderr', function (stderrLine) {
         console.log('FFMPEG Stderr output: ' + stderrLine)

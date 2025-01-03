@@ -159,14 +159,27 @@ export const ffProbeStoredResultsSchema = z.object({
  * data/config.json
  */
 export const configSchema = z.object({
+  server: z.object({
+    port: z.number().optional(),
+    tunerCount: z.number().optional(),
+    transcodeAudio: z.array(z.object({ codec: z.string(), profile: z.string() })).optional(),
+  }).optional(),
   iptvPlaylists: z.array(z.string()).nonempty(),
   epgSources: z.array(z.string()).nonempty(),
-  rakutenEpg: z.object({
-    enabled: z.boolean(),
-    classification_id: z.number(),
-    locale: z.string(),
-    market_code: z.string()
-  })
+  rakutenEpg: z.union([
+    z.object({
+      enabled: z.literal(true),
+      classification_id: z.number(),
+      locale: z.string(),
+      market_code: z.string()
+    }),
+    z.object({
+      enabled: z.literal(false),
+      classification_id: z.number().optional(),
+      locale: z.string().optional(),
+      market_code: z.string().optional()
+    })
+  ])
 })
 
 export type FfprobeData = z.infer<typeof ffProbeDataSchema>

@@ -1,4 +1,9 @@
 {
+  "server": {
+    "port": 26457,
+    "tunerCount": 4,
+    "transcodeAudio": [{"codec": "aac", "profile": "HE-AAC"}]
+  },
   "iptvPlaylists": [
     "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvitaplus.m3u",
     "https://tivustream.website/urls/listm3u",
