@@ -162,7 +162,7 @@ export const configSchema = z.object({
   server: z.object({
     port: z.number().optional(),
     tunerCount: z.number().optional(),
-    transcodeAudio: z.array(z.object({ codec: z.string(), profile: z.string() })).optional(),
+    transcodeAudio: z.array(z.object({ codec: z.string(), profile: z.string().optional() })).optional(),
   }).optional(),
   iptvPlaylists: z.array(z.string()).nonempty(),
   epgSources: z.array(z.string()).nonempty(),

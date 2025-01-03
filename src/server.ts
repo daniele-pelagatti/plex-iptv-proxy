@@ -270,8 +270,14 @@ const startServer = async () => {
         const ffprobeStoredResults = await readFFProbeResults()
         const matchedResult = ffprobeStoredResults.results.find(res => res.params.track.url === url)
         if (matchedResult?.ok) {
-          const audioStreams = matchedResult.metadata.streams.filter(stream => stream.codec_type === 'audio' && stream.codec_name && stream.profile)
-          needsAudioTranscode = !!audioStreams.find(stream => !!transcodeAudioConfig.find(config => config.codec === stream.codec_name && config.profile === stream.profile))
+          needsAudioTranscode = !!matchedResult.metadata.streams.find(stream =>
+            // must be an audio stream
+            stream.codec_type === 'audio' &&
+            // must match a config
+            !!transcodeAudioConfig.find(config =>
+              config.codec === stream.codec_name &&
+              config.profile === stream.profile
+            ))
         } else {
           console.warn('No matching entry found in stored ffProbe, audio will NOT be transcoded')
         }
