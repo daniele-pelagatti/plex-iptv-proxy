@@ -1,3 +1,5 @@
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { inspect } from 'node:util'
 
 import { Parser } from '@astronautlabs/m3u8'
@@ -7,13 +9,6 @@ import { getPortPromise } from 'portfinder'
 
 import { readEPG, readFFProbeResults } from './utils.js'
 
-// https://www.epgitalia.tv/guide2
-// http://epg-guide.com/it.gz
-/**
- *
- * @param file
- * @returns
- */
 const spawnFFMPEG = (file: string) => {
   return ffmpeg()
     .input(file)
@@ -49,9 +44,23 @@ const spawnFFMPEG = (file: string) => {
 }
 
 /**
+ * Start the HAPI Server
  *
+ * This function starts a HAPI server which serves the following routes:
+ * - GET /m3u8?url=<url> - parses an m3u8 file and returns a list of tracks
+ * - GET /device.xml - returns a device description xml
+ * - GET /discover.json - returns a json describing the device
+ * - GET /lineup.json - returns a json describing the lineup
+ * - GET /epg.xml - returns an xmltv file
+ * - GET /lineup.post - always returns a 200
+ * - GET /lineup_status.json - returns a json describing the lineup status
+ * - GET /stream?url=<url> - streams a video from the given url
+ *
+ * It also starts a ffmpeg process for each stream request and pipes the output of ffmpeg to the response.
+ *
+ * @returns {Promise<void>} - a promise which resolves when the server is started
  */
-const start = async () => {
+const startServer = async () => {
   const config = {
     port: await getPortPromise({ port: 26457 }),
     friendlyName: 'Plex IPTV Proxy',
@@ -241,7 +250,17 @@ const start = async () => {
   }
 }
 
-console.log('Starting IPTV Proxy')
-start()
-  .then(() => { console.log('IPTV Proxy Started') })
-  .catch((e: unknown) => { console.error(`Could not start IPTV Proxy: ${inspect(e)}`) })
+/**
+ * Execute this file if called directly, otherwise ignore
+ */
+
+const pathToThisFile = resolve(fileURLToPath(import.meta.url))
+const pathPassedToNode = resolve(process.argv[1])
+const isThisFileBeingRunViaCLI = pathToThisFile.includes(pathPassedToNode)
+
+if (isThisFileBeingRunViaCLI) {
+  console.log('Starting IPTV Proxy')
+  startServer()
+    .then(() => { console.log('IPTV Proxy Started') })
+    .catch((e: unknown) => { console.error(`Could not start IPTV Proxy: ${inspect(e)}`) })
+}

@@ -12,20 +12,6 @@ import { escapeHtml, readConfig, readFFProbeResults, writeEPG } from './utils.js
 
 const gunzipAsync = promisify(gunzip)
 
-// const epgURLs = [
-//   // 'https://www.epgitalia.tv/guide2',
-//   'https://www.epgitalia.tv/gzip',
-//   'http://epg-guide.com/it.gz',
-//   'https://i.mjh.nz/PlutoTV/it.xml.gz',
-//   'https://i.mjh.nz/SamsungTVPlus/it.xml.gz',
-
-//   // from https://github.com/Free-TV/IPTV/blob/master/epglist.txt
-//   'https://xmltv.tvkaista.net/guides/guidatv.sky.it.xml',
-//   'https://xmltv.tvkaista.net/guides/mediasetinfinity.mediaset.it.xml',
-//   'https://xmltv.tvkaista.net/guides/raiplay.it.xml',
-//   'https://xmltv.tvkaista.net/guides/superguidatv.it.xml'
-// ]
-
 type TrackEPGMatch = {
   channel: XmltvChannel
   programmes: XmltvProgramme[]
@@ -34,6 +20,16 @@ type TrackEPGMatch = {
   lastProgrammeDate: Date
 }
 
+/**
+ * Elaborates a match between a track and an epg.
+ *
+ * Given an EPG and a track, it filters out the programmes that are not related to the track, and
+ * checks if the EPG is outdated or if the first programme is too far in the future.
+ *
+ * @param {Xmltv} epg - The EPG to elaborate.
+ * @param {XmltvChannel} [foundEpgChannel] - The channel of the EPG that matches the track.
+ * @returns {TrackEPGMatch|undefined} The elaborated match or undefined if the match is not good.
+ */
 const elaborateMatch = (epg: Xmltv, foundEpgChannel?: XmltvChannel) => {
   if (foundEpgChannel) {
     const programmes = epg.programmes?.filter(prog => prog.channel === foundEpgChannel.id)
@@ -61,6 +57,17 @@ const elaborateMatch = (epg: Xmltv, foundEpgChannel?: XmltvChannel) => {
   return undefined
 }
 
+/**
+   * Given a list of valid EPG guides and a track, it tries to match the track with an EPG channel.
+   * It first tries to match the track.metadata['tvg-id'] on both epg.id and epg.displayName.
+   * If no match is found, it tries to match the track.title on both epg.id and epg.displayName.
+   * After that, it elaborates each match and filters out the matches that are not good.
+   * Finally, it sorts the matches by number of programmes (descending) and returns them.
+   *
+   * @param {Xmltv[]} validEpgGuides - The list of valid EPG guides.
+   * @param {Track} track - The track to match.
+   * @return {TrackEPGMatch[]} The matches, sorted by number of programmes (descending).
+   */
 const matchTrackWithEPGChannel = (validEpgGuides: Xmltv[], track: Track) => {
   const results:TrackEPGMatch[] = []
 
@@ -96,6 +103,20 @@ const matchTrackWithEPGChannel = (validEpgGuides: Xmltv[], track: Track) => {
 
   return results
 }
+
+/**
+ * Generates an Electronic Program Guide (EPG) based on FFProbe results and multiple XMLTV sources.
+ *
+ * This function downloads and parses EPG data from a list of configured sources,
+ * decompressing and interpreting XMLTV data. It attempts to match these EPG channels
+ * with tracks obtained from FFProbe results. If a match is found, it maps the EPG
+ * channel data to the track's channel information. If no match is found, it creates
+ * a default EPG entry for the track. The resulting EPG data is returned as an
+ * Xmltv object.
+ *
+ * @param {FFProbeResult[]} results - The list of FFProbe results to be used for generating the EPG.
+ * @returns {Promise<Xmltv>} A promise that resolves to the generated Xmltv object.
+ */
 
 export const generateEPG = async (results: FFProbeResult[]) => {
   console.log('generating EPG')
@@ -244,6 +265,10 @@ const start = async () => {
   const epg = await generateEPG(ffprobeStoredResults.results)
   await writeEPG(epg)
 }
+
+/**
+ * Execute this file if called directly, otherwise ignore
+ */
 
 const pathToThisFile = resolve(fileURLToPath(import.meta.url))
 const pathPassedToNode = resolve(process.argv[1])

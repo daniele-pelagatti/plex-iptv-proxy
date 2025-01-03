@@ -8,18 +8,11 @@ import { ffprobe } from './ffprobe.js'
 import { FFProbeStoredResults } from './schemas.js'
 import { readConfig, writeFFProbeResults } from './utils.js'
 
-// const lists = [
-//   'https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvitaplus.m3u',
-//   // 'https://raw.githubusercontent.com/Tundrak/IPTV-Italia/refs/heads/main/ipradioita.m3u',
-//   'https://tivustream.website/urls/listm3u',
-//   'https://tivustream.website/urls/tivustreamsport'
-// ]
-
-// export type FFPRobeStoreResultsReturnType = {
-//   date: number,
-//   results: FFProbeResult[]
-// }
-
+/**
+ * Generates and stores FFProbe results for all tracks in the iptv playlists.
+ *
+ * @returns {Promise<FFProbeStoredResults>} Resolves with the generated and stored results.
+ */
 export const ffprobeStoreResults = async (): Promise<FFProbeStoredResults> => {
   const pLimit = await import('p-limit')
   const limit = pLimit.default(25)
@@ -97,6 +90,10 @@ export const ffprobeStoreResults = async (): Promise<FFProbeStoredResults> => {
 
   return ffprobeResults
 }
+
+/**
+ * Execute this file if called directly, otherwise ignore
+ */
 
 const pathToThisFile = resolve(fileURLToPath(import.meta.url))
 const pathPassedToNode = resolve(process.argv[1])

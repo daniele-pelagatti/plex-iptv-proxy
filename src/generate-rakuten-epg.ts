@@ -90,10 +90,11 @@ export const schema = z.object({
 })
 
 const BASE_URL = 'https://gizmo.rakuten.tv/v3/live_channels'
+
 /**
- * Generates a valid XMLTV EPG from Rakuten's public JSON API
+ * Fetches the EPG data from rakuten.tv for the next 3 days, and transforms it into an XMLTV object.
  *
- * @returns
+ * @returns an Xmltv object, or undefined if the EPG generation is disabled in the config.
  */
 export const generateRakutenEPG = async () => {
   const { rakutenEpg } = await readConfig()
@@ -182,6 +183,10 @@ export const generateRakutenEPG = async () => {
   console.log('Rakuten EPG Generation finished successfully')
   return generatedEPG
 }
+
+/**
+ * Execute this file if called directly, otherwise ignore
+ */
 
 const pathToThisFile = resolve(fileURLToPath(import.meta.url))
 const pathPassedToNode = resolve(process.argv[1])
