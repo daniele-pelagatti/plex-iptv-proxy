@@ -1,0 +1,23 @@
+{
+  "iptvPlaylists": [
+    "https://raw.githubusercontent.com/Tundrak/IPTV-Italia/main/iptvitaplus.m3u",
+    "https://tivustream.website/urls/listm3u",
+    "https://tivustream.website/urls/tivustreamsport"
+  ],
+  "epgSources": [
+    "https://www.epgitalia.tv/gzip",
+    "http://epg-guide.com/it.gz",
+    "https://i.mjh.nz/PlutoTV/it.xml.gz",
+    "https://i.mjh.nz/SamsungTVPlus/it.xml.gz",
+    "https://xmltv.tvkaista.net/guides/guidatv.sky.it.xml",
+    "https://xmltv.tvkaista.net/guides/mediasetinfinity.mediaset.it.xml",
+    "https://xmltv.tvkaista.net/guides/raiplay.it.xml",
+    "https://xmltv.tvkaista.net/guides/superguidatv.it.xml"
+  ],
+  "rakutenEpg": {
+    "enabled": true,
+    "classification_id": 36,
+    "locale": "it",
+    "market_code": "it"
+  }
+}

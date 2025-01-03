@@ -1,0 +1,38 @@
+{
+    "cSpell.words": [
+      "astronautlabs",
+      "Daniele",
+      "discardcorrupt",
+      "fflags",
+      "Ffprobe",
+      "FIPTV",
+      "Fiptvitaplus",
+      "Flistm",
+      "Fmain",
+      "FMLE",
+      "Fraw",
+      "Ftivustream",
+      "IPTV",
+      "libmp",
+      "libx",
+      "mpegts",
+      "mpjpeg",
+      "noaccurate",
+      "pmts",
+      "probesize",
+      "rakuten",
+      "rtbufsize",
+      "Silicondust",
+      "superfast",
+      "Tundrak",
+      "upnp",
+      "Xmltv",
+      "zerolatency"
+    ],
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "[typescript]": {
+      "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+}

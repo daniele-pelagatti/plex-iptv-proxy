@@ -1,0 +1,6 @@
+.npm/
+bin/
+node_modules/
+backups/
+data/ffprobe-epg.xml
+data/ffprobe-stored-results.json

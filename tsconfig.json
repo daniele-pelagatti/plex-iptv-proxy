@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "moduleResolution": "nodenext",
+    "module": "NodeNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "removeComments": true,
+    "outDir": "bin",
+    "rootDir": "src"
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}

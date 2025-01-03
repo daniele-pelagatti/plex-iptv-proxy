@@ -1,0 +1,18 @@
+[Unit]
+Description=Plex IPTV Proxy Server
+Requires=network.target
+After=network.target
+
+[Service]
+Type=simple
+User=plex-iptv-proxy
+Group=plex-iptv-proxy
+UMask=002
+ExecStartPre=/usr/bin/npm --prefix /usr/lib/plex-iptv-proxy install
+ExecStart=/usr/bin/node /usr/lib/plex-iptv-proxy/bin/server.js
+WorkingDirectory=/usr/lib/plex-iptv-proxy
+SyslogIdentifier=plex-iptv-proxy-server
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

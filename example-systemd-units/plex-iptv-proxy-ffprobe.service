@@ -1,0 +1,18 @@
+[Unit]
+Description=Plex IPTV Proxy FFProbe
+Requires=network.target
+After=network.target
+
+[Service]
+Type=oneshot
+User=plex-iptv-proxy
+Group=plex-iptv-proxy
+UMask=002
+ExecStartPre=/usr/bin/npm --prefix /usr/lib/plex-iptv-proxy install
+ExecStart=/usr/bin/node /usr/lib/plex-iptv-proxy/bin/ffprobe-store-results.js
+ExecStartPost=/usr/bin/node /usr/lib/plex-iptv-proxy/bin/generate-epg.js
+WorkingDirectory=/usr/lib/plex-iptv-proxy
+SyslogIdentifier=plex-iptv-proxy-ffprobe
+
+[Install]
+WantedBy=multi-user.target

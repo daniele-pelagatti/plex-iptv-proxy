@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Plex IPTV Proxy EPG Generation
+
+[Timer]
+OnCalendar=*-*-* 10:00:00
+AccuracySec=1h
+Persistent=true
+RandomizedDelaySec=100min
+
+[Install]
+WantedBy=timers.target
