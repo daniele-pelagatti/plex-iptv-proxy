@@ -5,9 +5,15 @@ After=network.target
 
 [Service]
 Type=oneshot
+# customize if needed
 User=plex-iptv-proxy
 Group=plex-iptv-proxy
-UMask=002
+# Replace NPM_PATH and INSTALL_DIR as needed
+# if this service file was installed with the install script they will be already replaced
+
+# the following is not strictly needed
+# it allows a custom node.js installation inside INSTALL_DIR to be run when no global node/npm is available
+# delete if needed
 Environment=PATH=NPM_PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ExecStartPre=NPM_PATH/npm --prefix INSTALL_DIR install
 ExecStart=NPM_PATH/npm --prefix INSTALL_DIR run ffprobe-store-results
