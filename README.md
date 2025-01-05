@@ -20,6 +20,7 @@ This project aims to glue the two pieces together (iptv + epg) and make it easy 
 
 * Retrieves and aggregates multiple M3U8 Playlists, extracts all channels (tracks) and test them individually using ffprobe to see if they are valid.
 * Retrieves and aggregates EPG data from multiple EPG Sources and builds a tailor-made EPG for valid channels. 
+* Gzip or uncompressed EPG formats supported.
 * Tries to keep channel numbering consistent with what's indicated in the M3U8 playlists (if any channel number is indicated).
 * Proxies video content to Plex Media Server using FFmpeg, optionally transcoding unsupported audio.
 * Lightweight operation, the server is usually usable on low-end hardware (see [Performance considerations](#performance-considerations) below) 
@@ -29,8 +30,8 @@ This project aims to glue the two pieces together (iptv + epg) and make it easy 
 ## Requirements
 
 * FFmpeg (version 4 or higher)
-
-That's it, nodejs (v20 or higher) is not strictly required because the installation process (see below) will download and install the appropriate node.js version in the installation folder
+* system wide nodejs (v20 or higher) is preferable but not strictly required: 
+  the installation script (see below) will download and install the appropriate node.js version in the installation folder, in this case, however, either `curl` or `wget` is needed.
 
 ## Configuration
 > :warning: please complete the configuration before installing as a systemd service (see below)
@@ -40,7 +41,7 @@ The configuration of Plex IPTV Proxy is done through a JSON file located at `dat
 The configuration schema is defined using Zod and is as follows:
 
 * iptvPlaylists: An array of strings representing the URLs of the IPTV playlists to use.
-* epgSources: An array of strings representing URLs of EPGs to use for generating the aggregate EPG data.
+* epgSources: An array of strings representing URLs of EPGs to use for generating the aggregate EPG data, gzipped or uncompressed EPG are supported.
 * server: An object with the following properties:
   * port: The port on which the Plex IPTV Proxy server will listen for incoming requests. (optional, defaults to `26457`)
   * tunerCount: The number of tuners to use for streaming. (optional, defaults to `4`)
@@ -155,6 +156,9 @@ Heavyweight operations are
 The rest of the server operations are as lightweight as possible:
 * streams are proxy-ed to Plex with `vcodec: copy` and `acodec: copy` (except those marked otherwise, see above) 
 * epg and ffprobe results are stored to disk and retrieved on-demand
+
+The number of "tuners" `tunerCount` in `data/config.json` should be adjusted to match how many simultaneous audio streams your hardware can transcode at the same time, the default value of `4` should realistically be enough for the average household while lightweight enough to be run on a modest hardware setup (e.g. 1 programme being recorded by plex + 3 stream viewed simultaneously on various devices)
+
 
 ## Troubleshooting
 
