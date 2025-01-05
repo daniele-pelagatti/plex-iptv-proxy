@@ -110,7 +110,7 @@ for file in systemd-units/*.timer systemd-units/*.service; do
 done
 
 # Modify the unit files to use the INSTALL_DIR path and NPM_PATH
-for file in /etc/systemd/system/plex-iptv-proxy-epg-generator.* /etc/systemd/system/plex-iptv-proxy-ffprobe.* /etc/systemd/system/plex-iptv-proxy-server.service; do
+for file in /etc/systemd/system/plex-iptv-proxy-epg-generator.service /etc/systemd/system/plex-iptv-proxy-ffprobe.service /etc/systemd/system/plex-iptv-proxy-server.service; do
     sed -i "s|INSTALL_DIR|$INSTALL_DIR|g" "$file" || {
         echo "Error: Failed to modify $file: $?"
         exit 1
