@@ -138,11 +138,3 @@ for service in plex-iptv-proxy-epg-generator.timer plex-iptv-proxy-ffprobe.timer
 done
 
 echo "Installation complete"
-echo ""
-echo "#####################################################"
-echo "now log out and log in again to be part of the group"
-echo "alternatively, execute"
-echo "\$su '$SUDO_USER'"
-echo "or, if you are logged in via vscode, execute"
-echo "\$pkill -f -u \$EUID /code-server"
-echo "#####################################################"
