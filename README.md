@@ -146,7 +146,19 @@ Will undo what `install.sh` did. Please execute this if you'd like to uninstall 
 
 ## Configuration with Plex Media Server
 
+> :warning: before following these steps, make sure the server is active and ready to accept requests, the first time you start the server it could take some time to properly generate your lineup + epg. Check the logs (e.g. `journalctl --unit plex-iptv-proxy-server`) and/or visit `http://server-address:port/lineup.json` and verify it's responding.
 
+1. go to your plex DVR Setup interface and click "Setup Plex Tuner"
+![screenshot of step n°1](docs/setup-1.png)
+2. Make sure the address is correct then click `Have an XMLTV Guide on your server?` to continue
+![screenshot of step n°2](docs/setup-2.png)
+3. Enter your Plex IPTV Proxy address:port followed by `/epg.xml` (e.g `http://localhost:26457/epg.xml) + (optionally) name the XMLTV Guide.
+![screenshot of step n°3](docs/setup-3.png)
+4. Your channel lineup will appear and it will automatically be associated with the appropriated EPG guide.
+5. (Optionally), disable channels you are not interested in.
+![screenshot of step n°4](docs/setup-4.png)
+6. (Optionally) set your guide refresh time to 2-3 hours **after** the time indicated in `plex-iptv-proxy-epg-generator.timer` (10AM By default, with a random delay of 100min)
+![screenshot of step n°6](docs/plex-epg-refresh.png)
 ## Performance considerations
 
 Heavyweight operations are 
