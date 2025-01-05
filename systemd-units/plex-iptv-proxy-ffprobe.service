@@ -8,10 +8,10 @@ Type=oneshot
 User=plex-iptv-proxy
 Group=plex-iptv-proxy
 UMask=002
-Environment=PATH=INSTALL_DIR/.nvm/versions/node/v20.18.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStartPre=INSTALL_DIR/.nvm/versions/node/v20.18.1/bin/npm --prefix INSTALL_DIR install
-ExecStart=INSTALL_DIR/.nvm/versions/node/v20.18.1/bin/npm --prefix INSTALL_DIR run ffprobe-store-results
-ExecStartPost=INSTALL_DIR/.nvm/versions/node/v20.18.1/bin/npm --prefix INSTALL_DIR run generate-epg
+Environment=PATH=NPM_PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStartPre=NPM_PATH/npm --prefix INSTALL_DIR install
+ExecStart=NPM_PATH/npm --prefix INSTALL_DIR run ffprobe-store-results
+ExecStartPost=NPM_PATH/npm --prefix INSTALL_DIR run generate-epg
 WorkingDirectory=INSTALL_DIR
 SyslogIdentifier=plex-iptv-proxy-ffprobe
 

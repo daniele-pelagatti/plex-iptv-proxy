@@ -8,9 +8,9 @@ Type=simple
 User=plex-iptv-proxy
 Group=plex-iptv-proxy
 UMask=002
-Environment=PATH=INSTALL_DIR/.nvm/versions/node/v20.18.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStartPre=INSTALL_DIR/.nvm/versions/node/v20.18.1/bin/npm --prefix INSTALL_DIR install
-ExecStart=INSTALL_DIR/.nvm/versions/node/v20.18.1/bin/npm --prefix INSTALL_DIR run serve
+Environment=PATH=NPM_PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStartPre=NPM_PATH/npm --prefix INSTALL_DIR install
+ExecStart=NPM_PATH/npm --prefix INSTALL_DIR run serve
 WorkingDirectory=INSTALL_DIR
 SyslogIdentifier=plex-iptv-proxy-server
 Restart=on-failure

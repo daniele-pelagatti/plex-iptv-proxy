@@ -48,29 +48,46 @@ chown -R plex-iptv-proxy:plex-iptv-proxy $INSTALL_DIR || {
     exit 1
 }
 
-# Install Node.js
-echo "Installing Node.js as plex-iptv-proxy user"
-su -s /bin/bash -c '
-if command -v curl &> /dev/null; then
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-elif command -v wget &> /dev/null; then
-    wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+# Check if Node.js and npm are available for plex-iptv-proxy user and store their paths
+NODE_PATH=$(su -s /bin/bash -c 'command -v node' plex-iptv-proxy 2>/dev/null || echo "")
+NPM_PATH=$(su -s /bin/bash -c 'command -v npm' plex-iptv-proxy 2>/dev/null || echo "")
+
+if [ -n "$NODE_PATH" ] && [ -n "$NPM_PATH" ]; then
+    echo "Node.js is available for plex-iptv-proxy at: $NODE_PATH"
+    echo "npm is available for plex-iptv-proxy at: $NPM_PATH"
 else
-    echo "Error: Neither curl nor wget is installed, cannot install nvm"
-    exit 1
+    echo "Node.js and/or npm are not available for the plex-iptv-proxy user"
+    echo "Installing them locally using NVM"
+    # install node using nvm https://github.com/nvm-sh/nvm
+    su -s /bin/bash -c '
+    if command -v curl &> /dev/null; then
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+    elif command -v wget &> /dev/null; then
+        wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+    else
+        echo "Fatal Error: Neither curl nor wget is installed, cannot install nvm"
+        exit 1
+    fi
+
+    export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+
+    nvm install 20.18.1
+
+    ' plex-iptv-proxy || {
+        echo "Error: Failed to install Node.js: $?"
+        exit 1
+    }
+
+    NODE_PATH="$INSTALL_DIR/.nvm/versions/node/v20.18.1/bin/node"
+    NPM_PATH="$INSTALL_DIR/.nvm/versions/node/v20.18.1/bin/npm"
 fi
 
-export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+# Remove the last part of the path (the executable name)
+NODE_PATH="${NODE_PATH%/*}"
+NPM_PATH="${NPM_PATH%/*}"
 
-nvm install 20.18.1
-
-' plex-iptv-proxy || {
-    echo "Error: Failed to install Node.js: $?"
-    exit 1
-}
-
-# Check if necessary commands are available
+# Check if necessary commands are available to plex-iptv-proxy user
 for cmd in ffmpeg ffprobe; do
     su -s /bin/bash -c "
 if ! command -v $cmd &> /dev/null; then
@@ -92,9 +109,13 @@ for file in systemd-units/*.timer systemd-units/*.service; do
     }
 done
 
-# Modify the unit files to use the INSTALL_DIR path
+# Modify the unit files to use the INSTALL_DIR path and NPM_PATH
 for file in /etc/systemd/system/plex-iptv-proxy-epg-generator.* /etc/systemd/system/plex-iptv-proxy-ffprobe.* /etc/systemd/system/plex-iptv-proxy-server.service; do
     sed -i "s|INSTALL_DIR|$INSTALL_DIR|g" "$file" || {
+        echo "Error: Failed to modify $file: $?"
+        exit 1
+    }
+    sed -i "s|NPM_PATH|$NPM_PATH|g" "$file" || {
         echo "Error: Failed to modify $file: $?"
         exit 1
     }

@@ -6,15 +6,25 @@
 
 This project allows users to specify multiple IPTV m3u8 playlists, generates an EPG (Electronic Program Guide) for each channel and makes the result available to a Plex media server.
 
+## Motivation
+
+This projects is born from the need to use many IPTV playlist providers at once and make the all available to Plex DVR (or similar).
+
+Many IPTV playlists are limited to a number of channels and/or the channels you are interested in are scattered across multiple playlists. 
+
+Furthermore, it is often difficult to associate an IPTV playlist with an EPG source: it usually takes long and tedious manual intervention in the plex interface.
+
+This project aims to glue the two pieces together (iptv + epg) and make it easy to obtain an usable channel list which requires no further manual tweaking. 
+
 ## Features
 
 * Retrieves and aggregates multiple M3U8 Playlists, extracts all channels (tracks) and test them individually using ffprobe to see if they are valid.
 * Retrieves and aggregates EPG data from multiple EPG Sources and builds a tailor-made EPG for valid channels. 
-* Tries to keep channel numbering consistent with what's indicated in the M3U8 playlists (if any channel numbering is indicated).
-* Streams video content to Plex Media Server using FFmpeg, optionally transcoding unsupported audio.
+* Tries to keep channel numbering consistent with what's indicated in the M3U8 playlists (if any channel number is indicated).
+* Proxies video content to Plex Media Server using FFmpeg, optionally transcoding unsupported audio.
+* Lightweight operation, the server is usually usable on low-end hardware (see [Performance considerations](#performance-considerations) below) 
 * Supports generating an XMLTV EPG for Rakuten channels using their public JSON API 
 * Supports configuration options for server port, tuner count, transcode audio, and more.
-
 
 ## Requirements
 
@@ -133,8 +143,18 @@ sudo ./uninstall.sh
 ```
 Will undo what `install.sh` did. Please execute this if you'd like to uninstall the service and after a failed `install.sh` run.
 
-## Usage
+## Configuration with Plex Media Server
 
+
+## Performance considerations
+
+Heavyweight operations are 
+1. Initial/weekly FFProbe testing: this operation is parallelized and rate-limited, still it takes a non-negligible amount of time and resources to complete.
+2. Proxying channels with transcoded audio: this is controllable using `data/config.json`, empty the `server.transcodeAudio` array and no audio will be transcoded, ever, beware that your device may not support all types of audio streams though.
+
+The rest of the server operations are as lightweight as possible:
+* streams are proxy-ed to Plex with `vcodec: copy` and `acodec: copy` (except those marked otherwise, see above) 
+* epg and ffprobe results are stored to disk and retrieved on-demand
 
 ## Troubleshooting
 

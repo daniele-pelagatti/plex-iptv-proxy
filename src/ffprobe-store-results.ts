@@ -9,9 +9,12 @@ import { FFProbeStoredResults } from './schemas.js'
 import { readConfig, writeFFProbeResults } from './utils.js'
 
 /**
- * Generates and stores FFProbe results for all tracks in the iptv playlists.
- *
- * @returns {Promise<FFProbeStoredResults>} Resolves with the generated and stored results.
+ * Stores the results of ffprobe in data/ffprobe-stored-results.json
+ * It takes all the urls from the playlists and deduplicates them
+ * It then calls ffprobe for each of them and stores the results
+ * It assigns a channel number to each of the results starting from 1
+ * If a channel number is already taken, it moves the channel number to the last available one
+ * @returns {Promise<FFProbeStoredResults>}
  */
 export const ffprobeStoreResults = async (): Promise<FFProbeStoredResults> => {
   const pLimit = await import('p-limit')
