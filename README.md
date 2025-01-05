@@ -31,10 +31,10 @@ This project aims to glue the two pieces together (iptv + epg) and make it easy 
 
 * FFmpeg (version 4 or higher)
 * system wide nodejs (v20 or higher) is preferable but not strictly required: 
-  the installation script (see below) will download and install the appropriate node.js version in the installation folder, in this case, however, either `curl` or `wget` is needed.
+  the [installation script](#installation-as-a-systemd-service) (see below) will download and install the appropriate node.js version in the installation folder, in this case, however, either `curl` or `wget` is needed.
 
 ## Configuration
-> :warning: please complete the configuration before installing as a systemd service (see below)
+> :warning: please complete the configuration before [installing as a systemd service](#installation-as-a-systemd-service) (see below)
 
 The configuration of Plex IPTV Proxy is done through a JSON file located at `data/config.json`. 
 
@@ -86,26 +86,6 @@ Here's an example configuration:
 ```
 In this example, the `transcodeAudio` array specifies that the `aac` audio codec with profile `HE-AAC` needs to be transcoded because it is not supported by your plex app player.
 
-## Testing configuration
-
-> :warning: you will need a working nodejs+npm installation available for your user
-
-Start the server with 
-
-```bash
-npm i 
-npm run serve
-```
-
-> :information_source: please note the first time you start the server, it will 
-> * aggregate and test all the IPTV playlist you  provided in the configuration
-> * generate the tailor-made aggregate EPG
->
-> depending on how many IPTV playlist and EPG sources you provided, this process could be slow and the server will be unusable until the process is complete
-
-After the server has been started, 
-* navigate to http://localhost:26457/lineup.json and verify that the resulting lineup matches your expectations
-* navigate to http://localhost:26457/epg.xml and verify that the resulting EPG matches your expectations
 
 ## Installation as a systemd service
 
@@ -113,8 +93,9 @@ To install Plex IPTV Proxy, you can use the provided `install.sh` script to inst
 
 * Create a new user and group for the Plex IPTV Proxy service
 * Copy the project into a system folder of your choice (defaults to `/usr/lib/plex-iptv-proxy` if unspecified)
+* If necessary, download node.js and make it available to the user executing the service.
 * Set up the necessary permissions for the service to run
-* Install the systemd unit files for the Plex IPTV Proxy service and timers (see below)
+* Install the [systemd unit files](#systemd-services-and-timers) for the Plex IPTV Proxy service and timers (see below)
 
 To use the install script, run the following command:
 
@@ -159,6 +140,57 @@ Will undo what `install.sh` did. Please execute this if you'd like to uninstall 
 ![screenshot of step n°4](docs/setup-4.png)
 6. (Optionally) set your guide refresh time to 2-3 hours **after** the time indicated in `plex-iptv-proxy-epg-generator.timer` (10AM By default, with a random delay of 100min)
 ![screenshot of step n°6](docs/plex-epg-refresh.png)
+
+## Testing configuration or running manually
+
+It might be a good idea to test the configuration before [installing the project as a systemd service](#installation-as-a-systemd-service).
+
+Or, in case you don't use `systemd` and want to use the app with another service manager, you can follow the instructions below in order to start a fully functional "Plex IPTV Proxy" which you can manage your way.
+
+> :warning: you will need a working nodejs+npm installation available for your user (plus the usual ffmpeg)
+
+1. Install dependencies
+```bash
+npm install
+```
+
+2. Start the server with 
+
+```bash
+npm run serve
+```
+
+> :information_source: NOTE: the first time you start the server, it will 
+> * aggregate and test all the IPTV playlist you  provided in the configuration
+> * generate the tailor-made aggregate EPG
+>
+> depending on how many IPTV playlist and EPG sources you provided, this process could be slow and the server will be unusable until the process is complete
+
+After the server has been started, 
+* navigate to http://localhost:26457/lineup.json and verify that the resulting lineup matches your expectations
+* navigate to http://localhost:26457/epg.xml and verify that the resulting EPG matches your expectations
+
+### Regenerating the lineup
+In order to regenerate the lineup after you change the `iptvPlaylists` in `data/config`
+```bash
+npm run ffprobe-store-results
+```
+will regenerate the lineup, testing if the channels are usable and storing the results. This process may take some time.
+
+> :information_source: NOTE: After this step is complete, it is generally advisable to run the steps to [regenerate the epg](#regenerating-the-epg) below.
+
+### Regenerating the EPG
+
+After you change `epgSources` in `data/config.json` you can run 
+
+```bash
+npm run generate-epg
+```
+
+this will only regenerate the EPG, which is much faster than regenerating the lineup from scratch.
+
+> :information_source: NOTE: This requires completion of the steps to [generate the lineup](#regenerating-the-lineup) described above.
+
 ## Performance considerations
 
 Heavyweight operations are 
