@@ -86,7 +86,7 @@ npm i
 npm run serve
 ```
 
-> :info: please note the first time you start the server, it will 
+> :information_source: please note the first time you start the server, it will 
 > * aggregate and test all the IPTV playlist you  provided in the configuration
 > * generate the tailor-made aggregate EPG
 >
