@@ -1,0 +1,17 @@
+[Unit]
+Description=Plex IPTV Proxy EPG Generator, meant to be run daily by the corresponding timer, will generate the EPG Guide for the day
+Requires=network.target
+After=network.target
+
+[Service]
+Type=oneshot
+User=plex-iptv-proxy
+Group=plex-iptv-proxy
+UMask=002
+ExecStartPre=INSTALL_DIR/.nvm/versions/node/v20.18.1/bin/npm --prefix INSTALL_DIR install
+ExecStart=INSTALL_DIR/.nvm/versions/node/v20.18.1/bin/npm --prefix INSTALL_DIR run generate-epg
+WorkingDirectory=INSTALL_DIR
+SyslogIdentifier=plex-iptv-proxy-epg-generator
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,19 @@
+[Unit]
+Description=Plex IPTV Proxy Server
+Requires=network.target
+After=network.target
+
+[Service]
+Type=simple
+User=plex-iptv-proxy
+Group=plex-iptv-proxy
+UMask=002
+Environment=PATH=INSTALL_DIR/.nvm/versions/node/v20.18.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStartPre=INSTALL_DIR/.nvm/versions/node/v20.18.1/bin/npm --prefix INSTALL_DIR install
+ExecStart=INSTALL_DIR/.nvm/versions/node/v20.18.1/bin/npm --prefix INSTALL_DIR run serve
+WorkingDirectory=INSTALL_DIR
+SyslogIdentifier=plex-iptv-proxy-server
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

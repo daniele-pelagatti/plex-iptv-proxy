@@ -262,6 +262,9 @@ export const generateEPG = async (results: FFProbeResult[]) => {
 
 const start = async () => {
   const ffprobeStoredResults = await readFFProbeResults()
+  if (!ffprobeStoredResults) {
+    throw new Error('ffprobe results not found, please run generate-ffprobe-results first')
+  }
   const epg = await generateEPG(ffprobeStoredResults.results)
   await writeEPG(epg)
 }

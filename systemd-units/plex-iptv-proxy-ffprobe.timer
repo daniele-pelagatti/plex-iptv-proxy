@@ -1,8 +1,8 @@
 [Unit]
-Description=Daily Plex IPTV Proxy EPG Generation
+Description=Weekly Plex IPTV Proxy FFProbe trigger
 
 [Timer]
-OnCalendar=*-*-* 10:00:00
+OnCalendar=weekly
 AccuracySec=1h
 Persistent=true
 RandomizedDelaySec=100min

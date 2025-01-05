@@ -6,7 +6,9 @@ import { Parser } from '@astronautlabs/m3u8'
 import Hapi from '@hapi/hapi'
 import { getPortPromise } from 'portfinder'
 
-import { readConfig, readEPG, readFFProbeResults, spawnFFMPEG } from './utils.js'
+import { ffprobeStoreResults } from './ffprobe-store-results.js'
+import { generateEPG } from './generate-epg.js'
+import { readConfig, readEPG, readFFProbeResults, spawnFFMPEG, writeEPG } from './utils.js'
 
 /**
  * Start the HAPI Server
@@ -27,6 +29,22 @@ import { readConfig, readEPG, readFFProbeResults, spawnFFMPEG } from './utils.js
  */
 const startServer = async () => {
   const { server: serverConfig } = await readConfig()
+
+  /**
+   * Initial checks if files exist
+   *
+   * Absent files could be missing because this is the first time the server is started
+   */
+  let storedFFprobeResults = await readFFProbeResults()
+  if (!storedFFprobeResults) {
+    console.log('ffprobe results not found in data folder, generating now')
+    storedFFprobeResults = await ffprobeStoreResults()
+  }
+  const storedEPG = await readEPG()
+  if (!storedEPG) {
+    console.log('generated epg not found in data folder, generating now')
+    await writeEPG(await generateEPG(storedFFprobeResults.results))
+  }
 
   const config = {
     port: await getPortPromise({ port: serverConfig?.port || 26457 }),
@@ -145,21 +163,29 @@ const startServer = async () => {
   server.route({
     method: 'GET',
     path: config.lineupUrl,
+
     /**
      * Handles a request to retrieve the lineup in JSON format.
      *
-     * This handler reads stored ffprobe results, filters out invalid results,
-     * and generates a JSON response with channel information. Each valid channel
-     * includes its name, HD status, channel number, and a URL for streaming.
-     * The response is sent with a 'Content-Type' of 'application/json'.
+     * This handler reads the stored ffprobe results from disk and filters
+     * them for valid entries. It generates a JSON response containing
+     * channel information such as GuideName, HD status, GuideNumber, and
+     * streaming URL for each valid channel. The base URL is constructed
+     * from the request's protocol and host. If no ffprobe results are
+     * found, a 404 response is returned instructing to run
+     * generate-ffprobe-results first. The response is sent with a
+     * 'Content-Type' of 'application/json'.
      *
      * @param {Hapi.Request} request - The Hapi request object.
+     * @param {Hapi.ResponseToolkit} h - The Hapi response toolkit.
      * @returns {Hapi.ResponseObject} The response object containing the lineup in JSON format.
      */
-    handler: async (request) => {
+    handler: async (request, h) => {
       const baseUrl = request.url.protocol + '//' + request.url.host
       const ffprobeStoredResults = await readFFProbeResults()
-
+      if (!ffprobeStoredResults) {
+        return h.response('ffprobe results not found, please run generate-ffprobe-results first').code(404)
+      }
       const valid = ffprobeStoredResults.results.filter(res => res.ok)
 
       return request.generateResponse(
@@ -179,18 +205,25 @@ const startServer = async () => {
   server.route({
     method: 'GET',
     path: '/epg.xml',
+
     /**
-     * Handles a request to retrieve an EPG in XMLTV format.
+     * Handles a request to retrieve the EPG in XML format.
      *
-     * This handler reads the previously written EPG from disk and sends it as the response.
-     * The response is sent with a 'Content-Type' of 'application/xml'.
+     * This handler reads the previously generated EPG file from disk, and
+     * sends it as the response to the request. The response is sent with a
+     * 'Content-Type' of 'application/xml'. If the EPG file does not exist,
+     * a 404 response is sent.
      *
      * @param {Hapi.Request} request - The Hapi request object.
-     * @returns {Hapi.ResponseObject} The response object containing the EPG in XMLTV format.
+     * @param {Hapi.ResponseToolkit} h - The Hapi response toolkit.
+     * @returns {Hapi.ResponseObject} The response object containing the EPG in XML format.
      */
-    handler: async (request) => {
-      const ffprobeEpg = await readEPG()
-      const res = request.generateResponse(ffprobeEpg)
+    handler: async (request, h) => {
+      const epg = await readEPG()
+      if (!epg) {
+        return h.response('epg not found, please run generate-epg first').code(404)
+      }
+      const res = request.generateResponse(epg)
       res.header('Content-Type', 'application/xml')
       return res
     }
@@ -268,18 +301,20 @@ const startServer = async () => {
       const transcodeAudioConfig = serverConfig?.transcodeAudio
       if (transcodeAudioConfig) {
         const ffprobeStoredResults = await readFFProbeResults()
-        const matchedResult = ffprobeStoredResults.results.find(res => res.params.track.url === url)
-        if (matchedResult?.ok) {
-          needsAudioTranscode = !!matchedResult.metadata.streams.find(stream =>
-            // must be an audio stream
-            stream.codec_type === 'audio' &&
-            // must match a config
-            !!transcodeAudioConfig.find(config =>
-              config.codec === stream.codec_name &&
-              config.profile === stream.profile
-            ))
-        } else {
-          console.warn('No matching entry found in stored ffProbe, audio will NOT be transcoded')
+        if (ffprobeStoredResults) {
+          const matchedResult = ffprobeStoredResults.results.find(res => res.params.track.url === url)
+          if (matchedResult?.ok) {
+            needsAudioTranscode = !!matchedResult.metadata.streams.find(stream =>
+              // must be an audio stream
+              stream.codec_type === 'audio' &&
+              // must match a config
+              !!transcodeAudioConfig.find(config =>
+                config.codec === stream.codec_name &&
+                config.profile === stream.profile
+              ))
+          } else {
+            console.warn('No matching entry found in stored ffProbe, audio will NOT be transcoded')
+          }
         }
       }
       console.log('Will transcode audio?', needsAudioTranscode)

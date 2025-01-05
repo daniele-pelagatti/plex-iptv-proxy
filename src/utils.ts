@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { access, readFile, writeFile } from 'node:fs/promises'
 
 import { writeXmltv, Xmltv } from '@iptv/xmltv'
 import ffmpeg from 'fluent-ffmpeg'
@@ -29,26 +29,23 @@ export const writeFFProbeResults = async (results: FFProbeStoredResults) => {
   )
 }
 
-let cachedFFProbeResults:FFProbeStoredResults | undefined
-
 /**
- * Reads the stored ffprobe results from disk.
+ * Reads the previously written ffprobe results from disk.
  *
- * The first time this function is called, it reads the results from disk and caches them.
- * Subsequent calls return the cached results.
- *
- * @returns {Promise<FFProbeStoredResults>} Resolves with the stored results.
+ * @returns {Promise<FFProbeStoredResults | undefined>} Resolves with the parsed results if the file exists, or `undefined` if it doesn't.
  */
-export const readFFProbeResults = async (): Promise<FFProbeStoredResults> => {
-  if (!cachedFFProbeResults) {
-    const results = await readFile('data/ffprobe-stored-results.json', { encoding: 'utf-8' })
-    cachedFFProbeResults = await ffProbeStoredResultsSchema.parseAsync(JSON.parse(results))
+export const readFFProbeResults = async () => {
+  try {
+    await access('data/ffprobe-stored-results.json')
+  } catch {
+    return undefined
   }
-  return cachedFFProbeResults
+  const results = await readFile('data/ffprobe-stored-results.json', { encoding: 'utf-8' })
+  return ffProbeStoredResultsSchema.parseAsync(JSON.parse(results))
 }
 
 /**
- * Writes the given EPG to the file `data/ffprobe-epg.xml`.
+ * Writes the given EPG to `data/ffprobe-epg.xml`.
  *
  * @param {Xmltv} epg - The EPG to write.
  * @returns {Promise<void>} Resolves when the write is complete.
@@ -64,9 +61,14 @@ export const writeEPG = async (epg: Xmltv) => {
 /**
  * Reads the previously written EPG from disk.
  *
- * @returns {Promise<string>} Resolves with the contents of `data/ffprobe-epg.xml`.
+ * @returns {Promise<string | undefined>} Resolves with the contents of the file as a string if the file exists, or `undefined` if it doesn't.
  */
 export const readEPG = async () => {
+  try {
+    await access('data/ffprobe-epg.xml')
+  } catch {
+    return undefined
+  }
   return readFile('data/ffprobe-epg.xml', { encoding: 'utf-8' })
 }
 

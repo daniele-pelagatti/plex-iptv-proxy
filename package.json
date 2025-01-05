@@ -10,9 +10,10 @@
     "build": "tsc",
     "format": "eslint src/**/*.ts --fix",
     "lint": "eslint",
-    "start:server": "tsx --watch src/server.ts",
-    "start:generate-epg": "tsx src/generate-epg.ts",
-    "start:ffprobe-store-results": "tsx src/ffprobe-store-results.ts"
+    "start": "tsx --watch src/server.ts",
+    "serve": "tsx src/server.ts",
+    "generate-epg": "tsx src/generate-epg.ts",
+    "ffprobe-store-results": "tsx src/ffprobe-store-results.ts"
   },
   "dependencies": {
     "@astronautlabs/m3u8": "^1.0.1",
